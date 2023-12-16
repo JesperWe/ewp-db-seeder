@@ -235,6 +235,7 @@ const main = async() => {
         await createRelationship( authZedClient, "ewp/role_binding", "superuser", "member", "ewp/user", superuser.id )
         await createRelationship( authZedClient, "ewp/role_binding", "superuser", "role", "ewp/role", "platform_super_admin" )
         await createRelationship( authZedClient, "ewp/platform", "ewp", "granted", "ewp/role_binding", "superuser" )
+        console.log( "Created superuser binding for", superuser.id )
     }
 
     const profile = await getProfile( authorizedClient )
@@ -247,6 +248,7 @@ const main = async() => {
         await createPlaceType( authorizedClient, 'ROOM', 'Room' )
         await createPlaceType( authorizedClient, 'FLOOR', 'Floor' )
         await createPlaceType( authorizedClient, 'BUILDING', 'Building' )
+        console.log( "Seeded object type tables." )
     }
 
     console.log( "Current User ID", superuser.id )
@@ -265,6 +267,7 @@ const main = async() => {
 
     let resp = await authorizedClient.request( invite )
     const inviteId = resp.addInvitation.id
+    console.log( "Created Org user invite id", inviteId )
 
     const ouCreds = await login( ouEmail )
     const ouClient = new GraphQLClient( gqurl, {
@@ -279,6 +282,7 @@ const main = async() => {
                 id
                 expiresAt
                 status
+                role
                 membership {
                     organization {
                         id
@@ -294,6 +298,7 @@ const main = async() => {
         }`
 
     resp = await ouClient.request( accept )
+    console.log( "Invite accepted, role", resp.acceptInvitation.role )
 
     process.exit( 0 )
 }
