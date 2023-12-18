@@ -11,13 +11,16 @@ const pgCreds = {
     password: '123',
 }
 
-const gqurl = 'http://localhost:8000/graphql'
-
 program
-    .requiredOption( '-su, --super-user <email>',  )
-    .requiredOption( '-ou, --organization-user <email>',  )
-    .option( '--skipRegister' ) // Mostly for debugging this utility itself
+    .name("ewp-db-seeder")
+    .usage("-su <superuser-email> -ou <orguser email> [-p <password>]")
+    .requiredOption( '-su, --super-user <email>', )
+    .requiredOption( '-ou, --organization-user <email>', )
+    .option( '-p, --password <password>', 'Optional password', 'aA111111')
+    .option( '-url, --backend-url <url>', 'Optional backend url', 'http://localhost:8000/graphql')
+    .option( '--debug-skip-register', 'Mostly used when debugging this script itself' )
 
+program.showHelpAfterError( '(Add --help for additional information)' )
 program.parse()
 
 const options = program.opts()
@@ -30,7 +33,7 @@ const register = async( email ) => {
                 input: {
                     name: "Super User"
                     email: "${email}"
-                    password: "aA111111"
+                    password: "${options.password}"
                 }
             ) {
                 accessToken
@@ -43,14 +46,14 @@ const register = async( email ) => {
             }
         }
     `
-    const resp = await request( gqurl, document )
+    const resp = await request( options.backendUrl, document )
     return resp
 }
 
 const login = async( email ) => {
     const query = gql`
         mutation Authenticate {
-            authenticate(email: "${email}", password: "aA111111") {
+            authenticate(email: "${email}", password: "${options.password}") {
                 token
                 accessToken
                 expiresIn
@@ -66,7 +69,7 @@ const login = async( email ) => {
             }
         }
     `
-    return await request( gqurl, query )
+    return await request( options.backendUrl, query )
 }
 
 const createOrg = async( client, domain ) => {
@@ -214,7 +217,7 @@ const main = async() => {
 
     const superuser = creds.authenticate.user
 
-    const authorizedClient = new GraphQLClient( gqurl, {
+    const authorizedClient = new GraphQLClient( options.backendUrl, {
         headers: {
             authorization: `Bearer ${ creds.authenticate.accessToken }`,
         },
@@ -263,7 +266,7 @@ const main = async() => {
     const orgUser = ouCreds.authenticate.user
 
     // Create a client for non-superadmin user requests.
-    const ouClient = new GraphQLClient( gqurl, {
+    const ouClient = new GraphQLClient( options.backendUrl, {
         headers: {
             authorization: `Bearer ${ ouCreds.authenticate.accessToken }`,
         },
