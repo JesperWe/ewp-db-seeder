@@ -14,6 +14,8 @@ const pgCreds = {
 const gqurl = 'http://localhost:8000/graphql'
 
 program
+    .requiredOption( '-su, --super-user <email>',  )
+    .requiredOption( '-ou, --organization-user <email>',  )
     .option( '--skipRegister' ) // Mostly for debugging this utility itself
 
 program.parse()
@@ -173,9 +175,6 @@ const getProfile = async( client ) => {
     return resp.profile
 }
 
-const suEmail = "su@journeyman.se"
-const ouEmail = "ou@journeyman.se"
-
 const main = async() => {
     const pgClient = new Client( pgCreds )
     await pgClient.connect()
@@ -185,7 +184,7 @@ const main = async() => {
 
     // Register user
     if( !skipRegister ) {
-        let resp = await register( suEmail )
+        let resp = await register( options.superUser )
         if( resp.error ) {
             console.log( resp )
             process.exit( 1 )
@@ -195,7 +194,7 @@ const main = async() => {
         // Set email verified
         resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ su.user.id ] )
 
-        resp = await register( ouEmail )
+        resp = await register( options.organizationUser )
         if( resp.error ) {
             console.log( resp )
             process.exit( 1 )
@@ -207,7 +206,7 @@ const main = async() => {
     }
 
     // Login
-    const creds = await login( suEmail )
+    const creds = await login( options.superUser )
     if( creds.error ) {
         console.log( resp )
         process.exit( 1 )
@@ -248,7 +247,7 @@ const main = async() => {
     // Invite org user to org
     const invite = gql`
         mutation {
-            addInvitation(orgId: "${orgId}", input: { email: "${ouEmail}", role: OWNER }) {
+            addInvitation(orgId: "${orgId}", input: { email: "${options.organizationUser}", role: OWNER }) {
                 id
                 orgId
                 email
@@ -260,7 +259,7 @@ const main = async() => {
     const inviteId = resp.addInvitation.id
 
     // Login as non-superadmin user.
-    const ouCreds = await login( ouEmail )
+    const ouCreds = await login( options.organizationUser )
     const orgUser = ouCreds.authenticate.user
 
     // Create a client for non-superadmin user requests.
