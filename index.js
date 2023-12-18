@@ -14,12 +14,12 @@ const pgCreds = {
 const gqurl = 'http://localhost:8000/graphql'
 
 program
-    .option( '--continue' )
+    .option( '--skipRegister' ) // Mostly for debugging this utility itself
 
 program.parse()
 
 const options = program.opts()
-const skipRegister = !!options.continue
+const skipRegister = !!options.skipRegister
 
 const register = async( email ) => {
     const document = gql`
@@ -180,6 +180,9 @@ const main = async() => {
     const pgClient = new Client( pgCreds )
     await pgClient.connect()
 
+    const authZed = v1.NewClient( 'somerandomkey', 'localhost:50051', v1.ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS )
+    const { promises: authZedClient } = authZed // access client.promises
+
     // Register user
     if( !skipRegister ) {
         let resp = await register( suEmail )
@@ -192,8 +195,6 @@ const main = async() => {
         // Set email verified
         resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ su.user.id ] )
 
-        console.log( "New Superuser ID ", su.user.id )
-
         resp = await register( ouEmail )
         if( resp.error ) {
             console.log( resp )
@@ -203,8 +204,6 @@ const main = async() => {
 
         // Set email verified
         resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ ou.user.id ] )
-
-        console.log( "New Org user ID ", ou.user.id )
     }
 
     // Login
@@ -226,12 +225,7 @@ const main = async() => {
         // Create first Organization
         const org = await createOrg( authorizedClient, "domain" )
 
-        console.log( "Org", org )
-
         // Make superuser an actual superuser
-        const authZed = v1.NewClient( 'somerandomkey', 'localhost:50051', v1.ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS )
-        const { promises: authZedClient } = authZed // access client.promises
-
         await createRelationship( authZedClient, "ewp/role_binding", "superuser", "member", "ewp/user", superuser.id )
         await createRelationship( authZedClient, "ewp/role_binding", "superuser", "role", "ewp/role", "platform_super_admin" )
         await createRelationship( authZedClient, "ewp/platform", "ewp", "granted", "ewp/role_binding", "superuser" )
@@ -251,9 +245,6 @@ const main = async() => {
         console.log( "Seeded object type tables." )
     }
 
-    console.log( "Current User ID", superuser.id )
-    console.log( "Current Org ID", orgId )
-
     // Invite org user to org
     const invite = gql`
         mutation {
@@ -267,15 +258,19 @@ const main = async() => {
 
     let resp = await authorizedClient.request( invite )
     const inviteId = resp.addInvitation.id
-    console.log( "Created Org user invite id", inviteId )
 
+    // Login as non-superadmin user.
     const ouCreds = await login( ouEmail )
+    const orgUser = ouCreds.authenticate.user
+
+    // Create a client for non-superadmin user requests.
     const ouClient = new GraphQLClient( gqurl, {
         headers: {
             authorization: `Bearer ${ ouCreds.authenticate.accessToken }`,
         },
     } )
 
+    // Accept the invite
     const accept = gql`
         mutation AcceptInvitation {
             acceptInvitation(id: "${inviteId}") {
@@ -298,8 +293,16 @@ const main = async() => {
         }`
 
     resp = await ouClient.request( accept )
-    console.log( "Invite accepted, role", resp.acceptInvitation.role )
 
+    // Set email verified
+    resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ orgUser.id ] )
+
+    console.log( "\n--- All Done! ---" )
+    console.log( "Org ID", orgId )
+    console.log( "Superuser ID", superuser.id )
+    console.log( "Org user ID", orgUser.id )
+
+    await pgClient.end()
     process.exit( 0 )
 }
 
