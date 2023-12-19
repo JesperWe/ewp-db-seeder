@@ -13,14 +13,14 @@ const pgCreds = {
 
 program
     .name( "ewp-db-seeder" )
-    .usage( "-su <superuser-email> -ou <orguser email> [-p <password>]" )
+    .usage( "-su <superuser-email> -ou <orguser-email>" )
     .requiredOption( '-su, --super-user <email>', )
     .requiredOption( '-ou, --organization-user <email>', )
     .option( '-p, --password <password>', 'Optional password', 'aA111111' )
     .option( '-url, --backend-url <url>', 'Optional backend url', 'http://localhost:8000/graphql' )
     .option( '--debug-skip-register', 'Mostly used when debugging this script itself' )
 
-program.showHelpAfterError( '(Add --help for additional information)' )
+program.showHelpAfterError( '\n(Add --help for additional information)\n' )
 program.parse()
 
 const options = program.opts()
