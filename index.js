@@ -12,19 +12,19 @@ const pgCreds = {
 }
 
 program
-    .name("ewp-db-seeder")
-    .usage("-su <superuser-email> -ou <orguser email> [-p <password>]")
+    .name( "ewp-db-seeder" )
+    .usage( "-su <superuser-email> -ou <orguser email> [-p <password>]" )
     .requiredOption( '-su, --super-user <email>', )
     .requiredOption( '-ou, --organization-user <email>', )
-    .option( '-p, --password <password>', 'Optional password', 'aA111111')
-    .option( '-url, --backend-url <url>', 'Optional backend url', 'http://localhost:8000/graphql')
+    .option( '-p, --password <password>', 'Optional password', 'aA111111' )
+    .option( '-url, --backend-url <url>', 'Optional backend url', 'http://localhost:8000/graphql' )
     .option( '--debug-skip-register', 'Mostly used when debugging this script itself' )
 
 program.showHelpAfterError( '(Add --help for additional information)' )
 program.parse()
 
 const options = program.opts()
-const skipRegister = !!options.skipRegister
+const skipRegister = !!options.debugSkipRegister
 
 const register = async( email ) => {
     const document = gql`
@@ -180,7 +180,23 @@ const getProfile = async( client ) => {
 
 const main = async() => {
     const pgClient = new Client( pgCreds )
-    await pgClient.connect()
+
+    // Is database empty?
+    try {
+        await pgClient.connect()
+        const resp = await pgClient.query( 'SELECT id FROM users;' )
+        if( resp.rowCount > 0 && !skipRegister ) {
+            console.log( " ! Aborting since the database already has content. Re-create it before running again." )
+            process.exit( 1 )
+        }
+    } catch( e ) {
+        if( e.code === '42P01' )
+            console.log( " ! Aborting since the database is empty. Start backend first so migrations are run." )
+        else if( e.code === 'ECONNREFUSED' )
+            console.log( " ! Aborting. Database is not running, or not on the default port." )
+        else console.log( e )
+        process.exit( 1 )
+    }
 
     const authZed = v1.NewClient( 'somerandomkey', 'localhost:50051', v1.ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS )
     const { promises: authZedClient } = authZed // access client.promises
