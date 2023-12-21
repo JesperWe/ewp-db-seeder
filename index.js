@@ -2,6 +2,7 @@ const { program } = require( 'commander' )
 const { request, gql, GraphQLClient } = require( 'graphql-request' )
 const { v1 } = require( '@authzed/authzed-node' )
 const { Client } = require( 'pg' )
+const { v4: uuidv4 } = require( 'uuid' )
 
 const pgCreds = {
     host: 'localhost',
@@ -28,23 +29,23 @@ const skipRegister = !!options.debugSkipRegister
 
 const register = async( email ) => {
     const document = gql`
-        mutation {
-            register(
-                input: {
-                    name: "Super User"
-                    email: "${email}"
-                    password: "${options.password}"
-                }
-            ) {
-                accessToken
-                expiresIn
-                refreshToken
-                token
-                user {
-                    id
-                }
-            }
-        }
+		mutation {
+			register(
+				input: {
+					name: "Super User"
+					email: "${email}"
+					password: "${options.password}"
+				}
+			) {
+				accessToken
+				expiresIn
+				refreshToken
+				token
+				user {
+					id
+				}
+			}
+		}
     `
     const resp = await request( options.backendUrl, document )
     return resp
@@ -52,36 +53,36 @@ const register = async( email ) => {
 
 const login = async( email ) => {
     const query = gql`
-        mutation Authenticate {
-            authenticate(email: "${email}", password: "${options.password}") {
-                token
-                accessToken
-                expiresIn
-                refreshToken
-                user {
-                    id name email
-                }
-                subject {
-                    ... on User {
-                        verified
-                    }
-                }
-            }
-        }
+		mutation Authenticate {
+			authenticate(email: "${email}", password: "${options.password}") {
+				token
+				accessToken
+				expiresIn
+				refreshToken
+				user {
+					id name email
+				}
+				subject {
+					... on User {
+						verified
+					}
+				}
+			}
+		}
     `
     return await request( options.backendUrl, query )
 }
 
 const createOrg = async( client, domain ) => {
     const query = gql`
-        mutation CreateOrganization {
-            createOrganization(
-                input: { name: "${domain}", domain: "${domain}", ola: "1" }
-            ) {
-                name
-                id
-            }
-        }
+		mutation CreateOrganization {
+			createOrganization(
+				input: { name: "${domain}", domain: "${domain}", ola: "1" }
+			) {
+				name
+				id
+			}
+		}
     `
     return (await client.request( query )).createOrganization
 }
@@ -113,12 +114,12 @@ const createRelationship = async( client, objectType, objectId, relation, subjec
 
 const createDeviceType = async( client, id, name ) => {
     const query = gql`
-        mutation {
-            addDeviceType(input: { id: "${id}", name: "${name}" }) {
-                id
-                name
-            }
-        }`
+		mutation {
+			addDeviceType(input: { id: "${id}", name: "${name}" }) {
+				id
+				name
+			}
+		}`
 
     return (await client.request( query )).addDeviceType
 }
@@ -149,42 +150,42 @@ const createResourceType = async( client, id, name ) => {
 
 const getProfile = async( client ) => {
     const query = gql`
-        fragment MembershipFields on Membership {
-            role
-            userId
-            orgId
-            organization {
-                domain
-                logoUrl
-                name
-            }
-        }
+		fragment MembershipFields on Membership {
+			role
+			userId
+			orgId
+			organization {
+				domain
+				logoUrl
+				name
+			}
+		}
 
-        fragment InvitationFields on Invitation {
-            orgId
-            email
-            role
-            status
-        }
+		fragment InvitationFields on Invitation {
+			orgId
+			email
+			role
+			status
+		}
 
-        fragment ProfileFields on User {
-            name
-            email
-            verified
-            superAdmin
-            memberships {
-                ...MembershipFields
-            }
-            invitations(filter: { status: [PENDING, EXPIRED] }) {
-                ...InvitationFields
-            }
-        }
+		fragment ProfileFields on User {
+			name
+			email
+			verified
+			superAdmin
+			memberships {
+				...MembershipFields
+			}
+			invitations(filter: { status: [PENDING, EXPIRED] }) {
+				...InvitationFields
+			}
+		}
 
-        query Profile {
-            profile {
-                ...ProfileFields
-            }
-        }`
+		query Profile {
+			profile {
+				...ProfileFields
+			}
+		}`
 
     const resp = await client.request( query )
     return resp.profile
@@ -267,8 +268,8 @@ const main = async() => {
 
     // Seed the various _types tables
     if( !skipRegister ) {
-        await createDeviceType( authorizedClient, 'Kleeo', 'Kleeo Desk Booker' )
-        await createDeviceType( authorizedClient, 'Naso', 'Naso Room Booker' )
+        await createDeviceType( authorizedClient, 'KLEEO', 'Kleeo Desk Booker' )
+        await createDeviceType( authorizedClient, 'NASO', 'Naso Room Booker' )
         await createResourceType( authorizedClient, 'ROOM', 'Room' )
         await createResourceType( authorizedClient, 'DESK', 'Desk' )
         await createPlaceType( authorizedClient, 'FLOOR', 'Floor' )
@@ -278,17 +279,19 @@ const main = async() => {
 
     // Invite org user to org
     const invite = gql`
-        mutation {
-            addInvitation(orgId: "${orgId}", input: { email: "${options.organizationUser}", role: OWNER }) {
-                id
-                orgId
-                email
-                role
-            }
-        }`
+		mutation {
+			addInvitation(orgId: "${orgId}", input: { email: "${options.organizationUser}", role: OWNER }) {
+				id
+				orgId
+				email
+				role
+			}
+		}`
 
-    let resp = await authorizedClient.request( invite )
-    const inviteId = resp.addInvitation.id
+    if( !skipRegister ) {
+        let resp = await authorizedClient.request( invite )
+        const inviteId = resp.addInvitation.id
+    }
 
     // Login as non-superadmin user.
     const ouCreds = await login( options.organizationUser )
@@ -302,31 +305,37 @@ const main = async() => {
     } )
 
     // Accept the invite
-    const accept = gql`
-        mutation AcceptInvitation {
-            acceptInvitation(id: "${inviteId}") {
-                id
-                expiresAt
-                status
-                role
-                membership {
-                    organization {
-                        id
-                        name
-                    }
-                    user {
-                        id
-                        name
-                        email
-                    }
-                }
-            }
-        }`
-
-    resp = await ouClient.request( accept )
+    if( !skipRegister ) {
+        const accept = gql`
+			mutation AcceptInvitation {
+				acceptInvitation(id: "${inviteId}") {
+					id
+					expiresAt
+					status
+					role
+					membership {
+						organization {
+							id
+							name
+						}
+						user {
+							id
+							name
+							email
+						}
+					}
+				}
+			}`
+        resp = await ouClient.request( accept )
+    }
 
     // Set email verified
     resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ orgUser.id ] )
+
+    // Some places (no API support yet)
+    resp = await pgClient.query( 'INSERT INTO places (id, place_type, org_id) VALUES ($1, $2, $3) RETURNING *', [ uuidv4(), "BUILDING", orgId ] )
+    resp = await pgClient.query( 'INSERT INTO places (id, place_type, parent_place_id, org_id) VALUES ($1, $2, $3, $4) RETURNING *', [ uuidv4(), "FLOOR", resp.rows[0].id, orgId ] )
+
 
     console.log( "\n--- All Done! ---" )
     console.log( "Org ID", orgId )
