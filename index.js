@@ -125,12 +125,24 @@ const createDeviceType = async( client, id, name ) => {
 
 const createPlaceType = async( client, id, name ) => {
     const query = gql`
-        mutation {
-            addPlaceType(input: { id: "${id}", name: "${name}" }) {
-                id
-                name
-            }
-        }`
+		mutation {
+			addPlaceType(input: { id: "${id}", name: "${name}" }) {
+				id
+				name
+			}
+		}`
+
+    return (await client.request( query )).addPlaceType
+}
+
+const createResourceType = async( client, id, name ) => {
+    const query = gql`
+		mutation {
+			addResourceType(input: { id: "${id}", name: "${name}" }) {
+				id
+				name
+			}
+		}`
 
     return (await client.request( query )).addPlaceType
 }
@@ -257,7 +269,8 @@ const main = async() => {
     if( !skipRegister ) {
         await createDeviceType( authorizedClient, 'Kleeo', 'Kleeo Desk Booker' )
         await createDeviceType( authorizedClient, 'Naso', 'Naso Room Booker' )
-        await createPlaceType( authorizedClient, 'ROOM', 'Room' )
+        await createResourceType( authorizedClient, 'ROOM', 'Room' )
+        await createResourceType( authorizedClient, 'DESK', 'Desk' )
         await createPlaceType( authorizedClient, 'FLOOR', 'Floor' )
         await createPlaceType( authorizedClient, 'BUILDING', 'Building' )
         console.log( "Seeded object type tables." )
