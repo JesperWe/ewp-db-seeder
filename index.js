@@ -288,9 +288,10 @@ const main = async() => {
 			}
 		}`
 
+    let inviteId
     if( !skipRegister ) {
         let resp = await authorizedClient.request( invite )
-        const inviteId = resp.addInvitation.id
+        inviteId = resp.addInvitation.id
     }
 
     // Login as non-superadmin user.
@@ -335,7 +336,6 @@ const main = async() => {
     // Some places (no API support yet)
     resp = await pgClient.query( 'INSERT INTO places (id, place_type, org_id) VALUES ($1, $2, $3) RETURNING *', [ uuidv4(), "BUILDING", orgId ] )
     resp = await pgClient.query( 'INSERT INTO places (id, place_type, parent_place_id, org_id) VALUES ($1, $2, $3, $4) RETURNING *', [ uuidv4(), "FLOOR", resp.rows[0].id, orgId ] )
-
 
     console.log( "\n--- All Done! ---" )
     console.log( "Org ID", orgId )
