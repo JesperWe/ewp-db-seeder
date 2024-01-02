@@ -136,6 +136,51 @@ const createPlaceType = async( client, id, name ) => {
     return (await client.request( query )).addPlaceType
 }
 
+const createBuilding = async( client, orgid, name ) => {
+    const query = gql`mutation {
+		addBuilding(
+			orgId: "${orgid}",
+			input: { name: "${name}" }
+		) {
+			id
+		}
+	}`
+
+    return (await client.request( query )).addBuilding
+}
+
+const createFloor = async( client, orgid, buildingId, name ) => {
+    const query = gql`mutation {
+		addFloor(
+			orgId: "${orgid}",
+			buildingId: "${buildingId}",
+			input: { name: "${name}" }
+		) {
+			id
+		}
+	}`
+
+    return (await client.request( query )).addFloor
+}
+
+const createRoom = async( client, orgid, floorId, name, capacity, email ) => {
+    const query = gql`mutation {
+		addRoom(
+			orgId: "${orgid}"
+			input: {
+				floorId: "${floorId}"
+				name: "${name}"
+				capacity: ${capacity}
+				email: "${email}"
+			}
+		) {
+			id
+		}
+	}`
+
+    return (await client.request( query )).addRoom
+}
+
 const createResourceType = async( client, id, name ) => {
     const query = gql`
 		mutation {
@@ -333,15 +378,30 @@ const main = async() => {
     // Set email verified
     resp = await pgClient.query( 'UPDATE users SET email_verified_at = now() WHERE id = $1', [ orgUser.id ] )
 
-    // Some places (no API support yet)
-    resp = await pgClient.query( 'INSERT INTO places (id, place_type, org_id) VALUES ($1, $2, $3) RETURNING *', [ uuidv4(), "BUILDING", orgId ] )
-    resp = await pgClient.query( 'INSERT INTO places (id, place_type, parent_place_id, org_id) VALUES ($1, $2, $3, $4) RETURNING *', [ uuidv4(), "FLOOR", resp.rows[0].id, orgId ] )
+    // Some places/resources
+    buildingA = await createBuilding( authorizedClient, orgId, "Builing Alpha" )
+    buildingB = await createBuilding( authorizedClient, orgId, "Builing Bravo" )
+    buildingC = await createBuilding( authorizedClient, orgId, "Builing Charlie" )
+    buildingD = await createBuilding( authorizedClient, orgId, "Builing Delta" )
 
+    floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 1" )
+    floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 2" )
+    floorB1 = await createFloor( authorizedClient, orgId, buildingB.id, "Bravo floor 1" )
+    floorC1 = await createFloor( authorizedClient, orgId, buildingC.id, "Charlie floor 1" )
+    floorD1 = await createFloor( authorizedClient, orgId, buildingD.id, "Delta floor 1" )
+
+    roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:1", 6, "a1@example.com" )
+    roomA1_2 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:2", 9, "a2@example.com" )
+    roomA1_3 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:3", 12, "a3@example.com" )
+    roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:1", 17, "a4@example.com" )
+    roomA2_2 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:2", 4, "a5@example.com" )
+
+    roomC1_1 = await createRoom( authorizedClient, orgId, floorC1.id, "Meet C1:1", 5, "c1@example.com" )
+                                                
     console.log( "\n--- All Done! ---" )
-    console.log( "Org ID", orgId )
-    console.log( "Superuser ID", superuser.id )
-    console.log( "Org user ID", orgUser.id )
-
+    console.log( orgId, "Organization" )
+    console.log( superuser.id, "Superuser" )
+    console.log( orgUser.id, "Org user" )
     await pgClient.end()
     process.exit( 0 )
 }
