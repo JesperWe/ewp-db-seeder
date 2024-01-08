@@ -348,17 +348,16 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
   if (sources) {
     try {
       const googleCredentials = fs.readFileSync(options.googleCredentials, "utf-8");
-      const org = googleOrg;
       let c = JSON.parse(googleCredentials);
       c["private_key"] = c["private_key"].replace(/\n/g, "\\n");
-      googleSource = (await createGoogleSource(org.id, JSON.stringify(c).replace(/"/g, '\\"'))).addCalendarSource;
+      googleSource = (await createGoogleSource(googleOrg.id, JSON.stringify(c).replace(/"/g, '\\"'))).addCalendarSource;
     } catch (error) {
       console.log("! Cannot create google calendar source: ", options.googleCredentials, "error: ", error);
     }
 
     try {
       const microsoftCredentials = fs.readFileSync(options.microsoftCredentials, "utf-8");
-      msSource = await createMicrosoftSource(org.id, JSON.parse(microsoftCredentials));
+      msSource = await createMicrosoftSource(msOrg.id, JSON.parse(microsoftCredentials));
     } catch (ex) {
       console.log("! Cannot create microsoft calendar source");
     }
