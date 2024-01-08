@@ -51,7 +51,8 @@ const registerUser = async (name, email, password) => {
 				refreshToken
 				token
 				user {
-					id
+					id,
+          email
 				}
 			}
 		}
@@ -286,6 +287,42 @@ const createMicrosoftSource = async (orgId, credentials) => {
 
   return (await request(options.backendUrl, query)).addCalendarSource;
 };
+const inviteUser = (orgId, email, role) => {
+  const query = gql`
+		mutation {
+			addInvitation(orgId: "${orgId}", input: { email: "${email}", role: ${role} }) {
+				id
+				orgId
+				email
+				role
+			}
+		}`;
+
+  return query;
+};
+
+const acceptInvitation = (inviteId) => {
+  return gql`
+			mutation AcceptInvitation {
+				acceptInvitation(id: "${inviteId}") {
+					id
+					expiresAt
+					status
+					role
+					membership {
+						organization {
+							id
+							name
+						}
+						user {
+							id
+							name
+							email
+						}
+					}
+				}
+			}`;
+};
 
 const createCalendarResources = async (authorizedClient, pgClient) => {
   let googleCredentials;
@@ -305,14 +342,27 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
   if (googleCredentials) {
     try {
       const org = await createOrg(authorizedClient, "googleorg");
-      const res = await registerUser("Pam Beasly", "pam@g.evoko.dev", options.password);
-      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [res.register.user.id]);
 
       let c = JSON.parse(googleCredentials);
       c["private_key"] = c["private_key"].replace(/\n/g, "\\n");
       await createGoogleSource(org.id, JSON.stringify(c).replace(/"/g, '\\"'));
 
       const orgId = org.id;
+      const user = await registerUser("Pam Beasly", "pam@g.evoko.dev", options.password);
+      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
+      const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
+      // Login as non-superadmin user.
+      const ouCreds = await login("pam@g.evoko.dev");
+      const orgUser = ouCreds.authenticate.user;
+
+      // Create a client for non-superadmin user requests.
+      const ouClient = new GraphQLClient(options.backendUrl, {
+        headers: {
+          authorization: `Bearer ${ouCreds.authenticate.accessToken}`,
+        },
+      });
+      const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
+
       buildingA = await createBuilding(authorizedClient, orgId, "Building Google");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Google floor 1");
       floorA2 = await createFloor(authorizedClient, orgId, buildingA.id, "Google floor 2");
@@ -328,11 +378,25 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
   if (microsoftCredentials) {
     try {
       const org = await createOrg(authorizedClient, "microsoftorg");
-      const user = await registerUser("Pam Beasly", "pam@microsoft.evoko.dev", options.password);
-      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
+
       await createMicrosoftSource(org.id, JSON.parse(microsoftCredentials));
 
       const orgId = org.id;
+      const user = await registerUser("Pam Beasly", "pam@microsoft.evoko.dev", options.password);
+      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
+      const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
+      // Login as non-superadmin user.
+      const ouCreds = await login("pam@microsoft.evoko.dev");
+      const orgUser = ouCreds.authenticate.user;
+
+      // Create a client for non-superadmin user requests.
+      const ouClient = new GraphQLClient(options.backendUrl, {
+        headers: {
+          authorization: `Bearer ${ouCreds.authenticate.accessToken}`,
+        },
+      });
+      const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
+
       buildingA = await createBuilding(authorizedClient, orgId, "Building Microsoft");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 1");
       floorA2 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 2");
