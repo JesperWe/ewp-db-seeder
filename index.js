@@ -21,7 +21,9 @@ program
   .option("-p, --password <password>", "Optional password", "aA111111")
   .option("-url, --backend-url <url>", "Optional backend url", "http://localhost:8000/graphql")
   .option("--debug-skip-register", "Mostly used when debugging this script itself")
-  .option("-cal, --calendar", "Seed calendar data", false)
+  .option("-cal-sources, --calendar-sources", "Seed calendar source data", false)
+  .option("-cal-users, --calendar-users", "Seed calendar sources data", false)
+  .option("-cal, --calendar", "Same as using both -cal-users && -cal-sources", false)
   .option("-ms, --microsoft-credentials <path>", "Seed calendar data", "./.devenv/ms-credentials.json")
   .option("-goog, --google-credentials <path>", "Seed calendar data", "./.devenv/google-credentials.json");
 
@@ -325,29 +327,46 @@ const acceptInvitation = (inviteId) => {
 };
 
 const createCalendarResources = async (authorizedClient, pgClient) => {
-  let googleCredentials;
-  let microsoftCredentials;
-  try {
-    googleCredentials = fs.readFileSync(options.googleCredentials, "utf-8");
-  } catch (error) {
-    console.log("! Cannot read google credentials file: ", options.googleCredentials, "error: ", error);
-  }
+  const any = options.calendar || options.calendarSources || options.calendarUsers;
+  const sources = options.calendar || options.calendarSources;
+  const users = options.calendar || options.calendarUsers;
 
-  try {
-    microsoftCredentials = fs.readFileSync(options.microsoftCredentials, "utf-8");
-  } catch (error) {
-    console.log("! Cannot read microsoft credentials file: ", options.microsoftCredentials, "error: ", error);
-  }
-
-  if (googleCredentials) {
+  let googleOrg;
+  let msOrg;
+  if (any) {
     try {
-      const org = await createOrg(authorizedClient, "googleorg");
+      googleOrg = await createOrg(authorizedClient, "googleorg");
+      msOrg = await createOrg(authorizedClient, "microsoftorg");
+    } catch (ex) {
+      console.log("! Error creating calendar organizations");
+      return;
+    }
+  }
 
+  let googleSource;
+  let msSource;
+  if (sources) {
+    try {
+      const googleCredentials = fs.readFileSync(options.googleCredentials, "utf-8");
+      const org = googleOrg;
       let c = JSON.parse(googleCredentials);
       c["private_key"] = c["private_key"].replace(/\n/g, "\\n");
-      await createGoogleSource(org.id, JSON.stringify(c).replace(/"/g, '\\"'));
+      googleSource = (await createGoogleSource(org.id, JSON.stringify(c).replace(/"/g, '\\"'))).addCalendarSource;
+    } catch (error) {
+      console.log("! Cannot create google calendar source: ", options.googleCredentials, "error: ", error);
+    }
 
-      const orgId = org.id;
+    try {
+      const microsoftCredentials = fs.readFileSync(options.microsoftCredentials, "utf-8");
+      msSource = await createMicrosoftSource(org.id, JSON.parse(microsoftCredentials));
+    } catch (ex) {
+      console.log("! Cannot create microsoft calendar source");
+    }
+  }
+
+  if (googleOrg && users) {
+    try {
+      const orgId = googleOrg.id;
       const user = await registerUser("Pam Beasly", "pam@g.evoko.dev", options.password);
       await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
       const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
@@ -375,13 +394,9 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
     }
   }
 
-  if (microsoftCredentials) {
+  if (msOrg && users) {
     try {
-      const org = await createOrg(authorizedClient, "microsoftorg");
-
-      await createMicrosoftSource(org.id, JSON.parse(microsoftCredentials));
-
-      const orgId = org.id;
+      const orgId = msOrg.id;
       const user = await registerUser("Pam Beasly", "pam@microsoft.evoko.dev", options.password);
       await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
       const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
@@ -571,7 +586,7 @@ const main = async () => {
   roomC1_1 = await createRoom(authorizedClient, orgId, floorC1.id, "Meet C1:1", 5, "c1@example.com");
 
   // register calendars
-  if (options.calendar) {
+  if (options.calendar || options.calendarUsers || options.calendarSources) {
     await createCalendarResources(authorizedClient, pgClient);
   }
 
