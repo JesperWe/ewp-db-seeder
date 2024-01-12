@@ -176,7 +176,7 @@ const createFloor = async (client, orgid, buildingId, name) => {
 };
 
 const createRoom = async (client, orgid, floorId, name, capacity, email) => {
-  const query = gql`mutation {
+    const query = gql`mutation {
 		addRoom(
 			orgId: "${orgid}"
 			input: {
@@ -190,7 +190,24 @@ const createRoom = async (client, orgid, floorId, name, capacity, email) => {
 		}
 	}`;
 
-  return (await client.request(query)).addRoom;
+    return (await client.request(query)).addRoom;
+};
+
+const createDesk = async (client, orgid, floorId, name) => {
+    const query = gql`mutation {
+		addDesk(
+			orgId: "${orgid}"
+			input: {
+				floorId: "${floorId}"
+				name: "${name}"
+                deskType: "HOT"
+			}
+		) {
+			id
+		}
+	}`;
+
+    return (await client.request(query)).addRoom;
 };
 
 const createResourceType = async (client, id, name) => {
@@ -583,6 +600,12 @@ const main = async () => {
   roomA2_2 = await createRoom(authorizedClient, orgId, floorA2.id, "Meet A2:2", 4, "a5@example.com");
 
   roomC1_1 = await createRoom(authorizedClient, orgId, floorC1.id, "Meet C1:1", 5, "c1@example.com");
+
+  deskA1_1 = await createDesk(authorizedClient, orgId, floorA1.id, "Desk 246");
+  deskA1_2 = await createDesk(authorizedClient, orgId, floorA1.id, "Desk 251");
+  deskA1_3 = await createDesk(authorizedClient, orgId, floorA1.id, "Desk 323");
+  deskA2_1 = await createDesk(authorizedClient, orgId, floorA2.id, "Desk 767");
+  deskA2_2 = await createDesk(authorizedClient, orgId, floorA2.id, "Desk 666");
 
   // register calendars
   if (options.calendar || options.calendarUsers || options.calendarSources) {
