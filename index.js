@@ -200,7 +200,7 @@ const createDesk = async (client, orgid, floorId, name) => {
 			input: {
 				floorId: "${floorId}"
 				name: "${name}"
-                deskType: "HOT"
+                deskType: HOT
 			}
 		) {
 			id
