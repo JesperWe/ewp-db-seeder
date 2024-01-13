@@ -433,6 +433,8 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
       floorA2 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 2");
       roomA1_1 = await createRoom(authorizedClient, orgId, floorA1.id, "Apollo", 6, "apollo@microsoft.evoko.dev");
       roomA2_1 = await createRoom(authorizedClient, orgId, floorA2.id, "Athena", 17, "athena@microsoft.evoko.dev");
+      deskMS1 = await createDesk(authorizedClient, orgId, floorA1.id, "Desk 1:17");
+      deskMS1 = await createDesk(authorizedClient, orgId, floorA1.id, "Desk 1:3");
 
       // create membership
     } catch (err) {
