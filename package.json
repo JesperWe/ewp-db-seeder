@@ -9,6 +9,8 @@
     "@authzed/authzed-node": "^0.13.0",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
+    "csvtojson": "^2.0.10",
+    "dayjs": "^1.11.10",
     "graphql": "^16.8.1",
     "graphql-request": "^6.1.0",
     "pg": "^8.11.3",
