@@ -1,11 +1,15 @@
-const { program } = require( "commander" )
-const { request, gql, GraphQLClient } = require( "graphql-request" )
-const { v1 } = require( "@authzed/authzed-node" )
-const { Client } = require( "pg" )
-const { v4: uuidv4 } = require( "uuid" )
-const fs = require( "fs" )
-const csv = require( 'csvtojson' )
-const dayjs = require( 'dayjs' )
+import { program } from "commander"
+import { request, gql, GraphQLClient } from "graphql-request"
+import { v1 } from "@authzed/authzed-node"
+import pg from "pg"
+import { v4 as uuidv4 } from "uuid"
+import fs from "fs"
+import csv from 'csvtojson'
+import dayjs from 'dayjs'
+import random from 'random'
+
+const { Client } = pg
+
 const pgCreds = {
     host: "localhost",
     port: 5432,
@@ -484,6 +488,8 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
 const createBookingsForStatistics = async( pgClient ) => {
 
     const randomN = n => Math.floor( Math.random() * n )
+    const bookingStartHourAM = random.normal( 10, 1.5 )
+    const bookingStartHourPM = random.normal( 15, 1.5 )
 
     const creds = await login( options.superUser )
     if( creds.error ) {
@@ -505,7 +511,7 @@ const createBookingsForStatistics = async( pgClient ) => {
     const resources = await csv().fromFile( "resources.csv" )
     let created
     for( const r of resources ) {
-        floor = floors[randomN( noFloors )]
+        const floor = floors[randomN( noFloors )]
         if( r.type === "DESK" ) {
             created = await createDesk( authorizedClient, floor.org_id, floor.id, r.name )
         } else {
@@ -516,21 +522,52 @@ const createBookingsForStatistics = async( pgClient ) => {
         const u = await pgClient.query( "SELECT u.* FROM users u, memberships m WHERE m.user_id = u.id AND m.org_id = $1;", [ floor.org_id ] )
         const users = u.rows
         const noUsers = users.length
-        for( i = 0; i < 30; i++ ) {
+
+        for( let i = 0; i < 30; i++ ) {
+
             const d = dayjs().add( -1 * i, 'day' )
             let time = d.hour( 8 ).startOf( 'hour' )
             let end
-            noBookings = Math.max( 0, randomN( 6 ) - 1 )
-            for( b = 0; b < noBookings; b++ ) {
-                time = time.add( 15 * randomN( 4 ), 'minute' )
+            const noBookings = Math.max( 0, randomN( 5 ) - 1 )
+
+            // The idea here is to use two normal distributions for am/pm
+            // to get a realistic profile with less bookings during lunch hour.
+            
+            for( let b = 0; b < noBookings; b++ ) {
+
+                const AMbookingStart = bookingStartHourAM()
+                let h = Math.floor( AMbookingStart )
+                time = time.hour( h )
+                time = time.minute( Math.floor( (AMbookingStart - h) * 60 ) )
                 end = time.add( 15 * (randomN( 5 ) + 1), 'minute' )
-                const user = users[randomN( noUsers )].id
-                if( r.type === "DESK" ) {
-                    await createDeskBooking( authorizedClient, floor.org_id, created.id, user, time, end )
-                } else {
-                    await createRoomBooking( authorizedClient, floor.org_id, created.id, user, time, end )
+
+                let user = users[randomN( noUsers )].id
+
+                try {
+                    if( r.type === "DESK" ) {
+                        await createDeskBooking( authorizedClient, floor.org_id, created.id, user, time, end )
+                    } else {
+                        await createRoomBooking( authorizedClient, floor.org_id, created.id, user, time, end )
+                    }
+                } catch( e ) { /* ignore colliding bookings */
                 }
-                time = end
+
+                const PMbookingStart = bookingStartHourPM()
+                h = Math.floor( PMbookingStart )
+                time = time.hour( h )
+                time = time.minute( Math.floor( (PMbookingStart - h) * 60 ) )
+                end = time.add( 15 * (randomN( 5 ) + 1), 'minute' )
+
+                user = users[randomN( noUsers )].id
+
+                try {
+                    if( r.type === "DESK" ) {
+                        await createDeskBooking( authorizedClient, floor.org_id, created.id, user, time, end )
+                    } else {
+                        await createRoomBooking( authorizedClient, floor.org_id, created.id, user, time, end )
+                    }
+                } catch( e ) { /* ignore colliding bookings */
+                }
             }
         }
     }

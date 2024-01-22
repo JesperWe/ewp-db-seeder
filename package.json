@@ -5,6 +5,7 @@
   "main": "index.js",
   "author": "",
   "license": "",
+  "type": "module",
   "dependencies": {
     "@authzed/authzed-node": "^0.13.0",
     "chalk": "^5.3.0",
@@ -14,6 +15,7 @@
     "graphql": "^16.8.1",
     "graphql-request": "^6.1.0",
     "pg": "^8.11.3",
+    "random": "^4.1.0",
     "uuid": "^9.0.1"
   }
 }
