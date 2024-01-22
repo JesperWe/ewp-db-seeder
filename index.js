@@ -440,11 +440,11 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
             } )
             const acceptRes = await ouClient.request( acceptInvitation( invite.addInvitation.id ) )
 
-            buildingA = await createBuilding( authorizedClient, orgId, "Building Google" )
-            floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Google floor 1" )
-            floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Google floor 2" )
-            roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Demeter", 6, "c_18885sc0jj4hej7onle52q2p0q3ma@resource.calendar.google.com" )
-            roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Hades", 17, "c_188e73l8pim36jn8ndr7g7q7e4b0a@resource.calendar.google.com" )
+            const buildingA = await createBuilding( authorizedClient, orgId, "Building Google" )
+            const floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Google floor 1" )
+            const floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Google floor 2" )
+            const roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Demeter", 6, "c_18885sc0jj4hej7onle52q2p0q3ma@resource.calendar.google.com" )
+            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Hades", 17, "c_188e73l8pim36jn8ndr7g7q7e4b0a@resource.calendar.google.com" )
 
             // create membership
         } catch( err ) {
@@ -470,13 +470,13 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
             } )
             const acceptRes = await ouClient.request( acceptInvitation( invite.addInvitation.id ) )
 
-            buildingA = await createBuilding( authorizedClient, orgId, "Building Microsoft" )
-            floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Microsoft floor 1" )
-            floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Microsoft floor 2" )
-            roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Apollo", 6, "apollo@microsoft.evoko.dev" )
-            roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Athena", 17, "athena@microsoft.evoko.dev" )
-            deskMS1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:17" )
-            deskMS1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:3" )
+            const buildingA = await createBuilding( authorizedClient, orgId, "Building Microsoft" )
+            const floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Microsoft floor 1" )
+            const floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Microsoft floor 2" )
+            const roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Apollo", 6, "apollo@microsoft.evoko.dev" )
+            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Athena", 17, "athena@microsoft.evoko.dev" )
+            const deskMS1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:17" )
+            const deskMS2 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:3" )
 
             // create membership
         } catch( err ) {
@@ -532,7 +532,7 @@ const createBookingsForStatistics = async( pgClient ) => {
 
             // The idea here is to use two normal distributions for am/pm
             // to get a realistic profile with less bookings during lunch hour.
-            
+
             for( let b = 0; b < noBookings; b++ ) {
 
                 const AMbookingStart = bookingStartHourAM()
@@ -618,7 +618,7 @@ const main = async() => {
             console.log( resp )
             process.exit( 1 )
         }
-        su = resp.register
+        let su = resp.register
 
         // Set email verified
         resp = await pgClient.query( "UPDATE users SET email_verified_at = now() WHERE id = $1", [ su.user.id ] )
@@ -628,7 +628,7 @@ const main = async() => {
             console.log( resp )
             process.exit( 1 )
         }
-        ou = resp.register
+        let ou = resp.register
 
         // Set email verified
         resp = await pgClient.query( "UPDATE users SET email_verified_at = now() WHERE id = $1", [ ou.user.id ] )
@@ -724,37 +724,37 @@ const main = async() => {
 					}
 				}
 			}`
-        resp = await ouClient.request( accept )
+        let resp = await ouClient.request( accept )
     }
 
     // Set email verified
-    resp = await pgClient.query( "UPDATE users SET email_verified_at = now() WHERE id = $1", [ orgUser.id ] )
+    let resp = await pgClient.query( "UPDATE users SET email_verified_at = now() WHERE id = $1", [ orgUser.id ] )
 
     // Some places/resources
-    buildingA = await createBuilding( authorizedClient, orgId, "Builing Alpha" )
-    buildingB = await createBuilding( authorizedClient, orgId, "Builing Bravo" )
-    buildingC = await createBuilding( authorizedClient, orgId, "Builing Charlie" )
-    buildingD = await createBuilding( authorizedClient, orgId, "Builing Delta" )
+    const buildingA = await createBuilding( authorizedClient, orgId, "Builing Alpha" )
+    const buildingB = await createBuilding( authorizedClient, orgId, "Builing Bravo" )
+    const buildingC = await createBuilding( authorizedClient, orgId, "Builing Charlie" )
+    const buildingD = await createBuilding( authorizedClient, orgId, "Builing Delta" )
 
-    floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 1" )
-    floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 2" )
-    floorB1 = await createFloor( authorizedClient, orgId, buildingB.id, "Bravo floor 1" )
-    floorC1 = await createFloor( authorizedClient, orgId, buildingC.id, "Charlie floor 1" )
-    floorD1 = await createFloor( authorizedClient, orgId, buildingD.id, "Delta floor 1" )
+    const floorA1 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 1" )
+    const floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Alpha floor 2" )
+    const floorB1 = await createFloor( authorizedClient, orgId, buildingB.id, "Bravo floor 1" )
+    const floorC1 = await createFloor( authorizedClient, orgId, buildingC.id, "Charlie floor 1" )
+    const floorD1 = await createFloor( authorizedClient, orgId, buildingD.id, "Delta floor 1" )
 
-    roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:1", 6, "a1@example.com" )
-    roomA1_2 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:2", 9, "a2@example.com" )
-    roomA1_3 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:3", 12, "a3@example.com" )
-    roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:1", 17, "a4@example.com" )
-    roomA2_2 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:2", 4, "a5@example.com" )
+    const roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:1", 6, "a1@example.com" )
+    const roomA1_2 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:2", 9, "a2@example.com" )
+    const roomA1_3 = await createRoom( authorizedClient, orgId, floorA1.id, "Meet A1:3", 12, "a3@example.com" )
+    const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:1", 17, "a4@example.com" )
+    const roomA2_2 = await createRoom( authorizedClient, orgId, floorA2.id, "Meet A2:2", 4, "a5@example.com" )
 
-    roomC1_1 = await createRoom( authorizedClient, orgId, floorC1.id, "Meet C1:1", 5, "c1@example.com" )
+    const roomC1_1 = await createRoom( authorizedClient, orgId, floorC1.id, "Meet C1:1", 5, "c1@example.com" )
 
-    deskA1_1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 246" )
-    deskA1_2 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 251" )
-    deskA1_3 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 323" )
-    deskA2_1 = await createDesk( authorizedClient, orgId, floorA2.id, "Desk 767" )
-    deskA2_2 = await createDesk( authorizedClient, orgId, floorA2.id, "Desk 666" )
+    const deskA1_1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 246" )
+    const deskA1_2 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 251" )
+    const deskA1_3 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 323" )
+    const deskA2_1 = await createDesk( authorizedClient, orgId, floorA2.id, "Desk 767" )
+    const deskA2_2 = await createDesk( authorizedClient, orgId, floorA2.id, "Desk 666" )
 
     // register calendars
     if( options.calendar || options.calendarUsers || options.calendarSources ) {
