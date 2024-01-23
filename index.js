@@ -184,6 +184,7 @@ const createRoom = async (client, orgid, floorId, name, capacity, email) => {
 				name: "${name}"
 				capacity: ${capacity}
 				email: "${email}"
+        resources:[LIGHTS]
 			}
 		) {
 			id
@@ -312,6 +313,7 @@ const acceptInvitation = (inviteId) => {
 					status
 					role
 					membership {
+            id
 						organization {
 							id
 							name
@@ -380,6 +382,7 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
         },
       });
       const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
+      console.log("pam@g.evoko.dev: ", acceptRes.acceptInvitation.membership.id);
 
       buildingA = await createBuilding(authorizedClient, orgId, "Building Google");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Google floor 1");
@@ -410,6 +413,7 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
         },
       });
       const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
+      console.log("pam@microsoft.evoko.dev: ", acceptRes.acceptInvitation.membership.id);
 
       buildingA = await createBuilding(authorizedClient, orgId, "Building Microsoft");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 1");
