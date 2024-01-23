@@ -189,7 +189,6 @@ const createRoom = async( client, orgid, floorId, name, capacity, email ) => {
 				floorId: "${floorId}"
 				name: "${name}"
 				capacity: ${capacity}
-				email: "${email}"
 			}
 		) {
 			id
