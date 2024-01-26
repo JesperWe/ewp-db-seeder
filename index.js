@@ -474,9 +474,9 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
             const floorA2 = await createFloor( authorizedClient, orgId, buildingA.id, "Microsoft floor 2" )
             const roomA1_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Apollo", 6, "apollo@microsoft.evoko.dev" )
             const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Athena", 17, "athena@microsoft.evoko.dev" )
-            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Demeter", 8, "athena@microsoft.evoko.dev" )
-            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Poseidon", 10, "athena@microsoft.evoko.dev" )
-            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Zeus", 4, "athena@microsoft.evoko.dev" )
+            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA1.id, "Demeter", 8, "demeter@microsoft.evoko.dev" )
+            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Poseidon", 10, "poseidon@microsoft.evoko.dev" )
+            const roomA2_1 = await createRoom( authorizedClient, orgId, floorA2.id, "Zeus", 4, "zeus@microsoft.evoko.dev" )
             const deskMS1 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:17" )
             const deskMS2 = await createDesk( authorizedClient, orgId, floorA1.id, "Desk 1:3" )
 
