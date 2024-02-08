@@ -368,21 +368,9 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
   if (googleOrg && users) {
     try {
       const orgId = googleOrg.id;
-      const user = await registerUser("Pam Beasly", "pam@g.evoko.dev", options.password);
-      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
-      const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
-      // Login as non-superadmin user.
-      const ouCreds = await login("pam@g.evoko.dev");
-      const orgUser = ouCreds.authenticate.user;
-
-      // Create a client for non-superadmin user requests.
-      const ouClient = new GraphQLClient(options.backendUrl, {
-        headers: {
-          authorization: `Bearer ${ouCreds.authenticate.accessToken}`,
-        },
-      });
-      const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
-      console.log("pam@g.evoko.dev: ", acceptRes.acceptInvitation.membership.id);
+      await registerOrgUser(authorizedClient, pgClient, "Pam Beesly", "pam@g.evoko.dev", orgId);
+      await registerOrgUser(authorizedClient, pgClient, "Dwight Schrute", "dwight@g.evoko.dev", orgId);
+      await registerOrgUser(authorizedClient, pgClient, "Doesnt Exist", "idontexist@somethingelse.com", orgId);
 
       buildingA = await createBuilding(authorizedClient, orgId, "Building Google");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Google floor 1");
@@ -399,21 +387,9 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
   if (msOrg && users) {
     try {
       const orgId = msOrg.id;
-      const user = await registerUser("Pam Beasly", "pam@microsoft.evoko.dev", options.password);
-      await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
-      const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
-      // Login as non-superadmin user.
-      const ouCreds = await login("pam@microsoft.evoko.dev");
-      const orgUser = ouCreds.authenticate.user;
-
-      // Create a client for non-superadmin user requests.
-      const ouClient = new GraphQLClient(options.backendUrl, {
-        headers: {
-          authorization: `Bearer ${ouCreds.authenticate.accessToken}`,
-        },
-      });
-      const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
-      console.log("pam@microsoft.evoko.dev: ", acceptRes.acceptInvitation.membership.id);
+      await registerOrgUser(authorizedClient, pgClient, "Pam Beesly", "pam@microsoft.evoko.dev", orgId);
+      await registerOrgUser(authorizedClient, pgClient, "Edvard Schultz", "edvard@microsoft.evoko.dev", orgId);
+      await registerOrgUser(authorizedClient, pgClient, "Doesnt Exist", "idontexist@somethingelse.com", orgId);
 
       buildingA = await createBuilding(authorizedClient, orgId, "Building Microsoft");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 1");
@@ -426,6 +402,24 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
       console.log("! Error creating microsoft calendar source: ", err);
     }
   }
+};
+
+const registerOrgUser = async (authorizedClient, pgClient, name, email, orgId) => {
+  const user = await registerUser(name, email, options.password);
+  await pgClient.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [user.register.user.id]);
+  const invite = await authorizedClient.request(inviteUser(orgId, user.register.user.email, "USER"));
+  // Login as non-superadmin user.
+  const ouCreds = await login(email);
+  const orgUser = ouCreds.authenticate.user;
+
+  // Create a client for non-superadmin user requests.
+  const ouClient = new GraphQLClient(options.backendUrl, {
+    headers: {
+      authorization: `Bearer ${ouCreds.authenticate.accessToken}`,
+    },
+  });
+  const acceptRes = await ouClient.request(acceptInvitation(invite.addInvitation.id));
+  console.log(email, acceptRes.acceptInvitation.membership.id);
 };
 
 const main = async () => {
