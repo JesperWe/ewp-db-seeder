@@ -389,7 +389,7 @@ const createCalendarResources = async (authorizedClient, pgClient) => {
       const orgId = msOrg.id;
       await registerOrgUser(authorizedClient, pgClient, "Pam Beesly", "pam@microsoft.evoko.dev", orgId);
       await registerOrgUser(authorizedClient, pgClient, "Edvard Schultz", "edvard@microsoft.evoko.dev", orgId);
-      await registerOrgUser(authorizedClient, pgClient, "Doesnt Exist", "idontexist@somethingelse.com", orgId);
+      await registerOrgUser(authorizedClient, pgClient, "Doesnt Exist", "idontexisteither@somethingelse.com", orgId);
 
       buildingA = await createBuilding(authorizedClient, orgId, "Building Microsoft");
       floorA1 = await createFloor(authorizedClient, orgId, buildingA.id, "Microsoft floor 1");
