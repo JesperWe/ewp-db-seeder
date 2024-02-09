@@ -199,6 +199,18 @@ const createRoom = async( client, orgid, floorId, name, capacity, email ) => {
     return res.addRoom
 }
 
+const createChannel = async( client, id, name ) => {
+    const query = gql`mutation AddChannel {
+		addChannel(input: { id: "${id}", name: "${name}" }) {
+			id
+			name
+		}
+	}`
+
+    const res = await client.request( query )
+    return res.addChannel
+}
+
 const createDesk = async( client, orgid, floorId, name ) => {
     const query = gql`mutation {
 		addDesk(
@@ -762,6 +774,8 @@ const main = async() => {
     if( options.calendar || options.calendarUsers || options.calendarSources ) {
         await createCalendarResources( authorizedClient, pgClient )
     }
+
+    createChannel(authorizedClient, "STABLE", "Production")
 
     console.log( "\n--- All Done! ---" )
     console.log( orgId, "Organization" )
