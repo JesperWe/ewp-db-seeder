@@ -775,7 +775,7 @@ const main = async() => {
         await createCalendarResources( authorizedClient, pgClient )
     }
 
-    createChannel(authorizedClient, "STABLE", "Production")
+    await createChannel(authorizedClient, "STABLE", "Production")
 
     console.log( "\n--- All Done! ---" )
     console.log( orgId, "Organization" )
