@@ -1,8 +1,7 @@
 import { program } from "commander"
-import { request, gql, GraphQLClient } from "graphql-request"
+import { gql, GraphQLClient, request } from "graphql-request"
 import { v1 } from "@authzed/authzed-node"
 import pg from "pg"
-import { v4 as uuidv4 } from "uuid"
 import fs from "fs"
 import csv from 'csvtojson'
 import dayjs from 'dayjs'
@@ -31,7 +30,7 @@ program
     .option( "-cal, --calendar", "Same as using both -cal-users && -cal-sources", false )
     .option( "-ms, --microsoft-credentials <path>", "Seed calendar data", "./.devenv/ms-credentials.json" )
     .option( "-goog, --google-credentials <path>", "Seed calendar data", "./.devenv/google-credentials.json" )
-    .option( "-stats, --booking-statistics", "Only do random bookings for KPIs" )
+    .option( "-stats, --booking-statistics <days>", "Only do random bookings for KPIs, starting with days offset", "-30" )
 
 program.showHelpAfterError( "\n(Add --help for additional information)\n" )
 program.parse()
@@ -499,7 +498,7 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
     }
 }
 
-const createBookingsForStatistics = async( pgClient ) => {
+const createBookingsForStatistics = async( pgClient, daysOffset ) => {
 
     const randomN = n => Math.floor( Math.random() * n )
     const bookingStartHourAM = random.normal( 10, 1.5 )
@@ -539,7 +538,7 @@ const createBookingsForStatistics = async( pgClient ) => {
 
         for( let i = 0; i < 30; i++ ) {
 
-            const d = dayjs().add( -1 * i, 'day' )
+            const d = dayjs().add( daysOffset, 'day' ).add( i, 'day' )
             let time = d.hour( 8 ).startOf( 'hour' )
             let end
             const noBookings = Math.max( 0, randomN( 5 ) - 1 )
@@ -618,7 +617,7 @@ const main = async() => {
 
     // Booking stats is meant to be run as a separate step only if desired.
     if( options.bookingStatistics ) {
-        await createBookingsForStatistics( pgClient )
+        await createBookingsForStatistics( pgClient, parseInt( options.bookingStatistics ) )
         process.exit( 0 )
     }
 
@@ -775,7 +774,7 @@ const main = async() => {
         await createCalendarResources( authorizedClient, pgClient )
     }
 
-    await createChannel(authorizedClient, "STABLE", "Production")
+    await createChannel( authorizedClient, "STABLE", "Production" )
 
     console.log( "\n--- All Done! ---" )
     console.log( orgId, "Organization" )
