@@ -30,7 +30,7 @@ program
     .option( "-cal, --calendar", "Same as using both -cal-users && -cal-sources", false )
     .option( "-ms, --microsoft-credentials <path>", "Seed calendar data", "./.devenv/ms-credentials.json" )
     .option( "-goog, --google-credentials <path>", "Seed calendar data", "./.devenv/google-credentials.json" )
-    .option( "-stats, --booking-statistics <days>", "Only do random bookings for KPIs, starting with days offset", "-30" )
+    .option( "-stats, --booking-statistics <days>", "Only do random bookings for KPIs, starting with days offset" )
 
 program.showHelpAfterError( "\n(Add --help for additional information)\n" )
 program.parse()
