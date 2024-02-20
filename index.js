@@ -429,6 +429,7 @@ const createCalendarResources = async( authorizedClient, pgClient ) => {
             msSource = await createMicrosoftSource( msOrg.id, JSON.parse( microsoftCredentials ) )
         } catch( ex ) {
             console.log( "! Cannot create microsoft calendar source" )
+            console.log( ex )
         }
     }
 
